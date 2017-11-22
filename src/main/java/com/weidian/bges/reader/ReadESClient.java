@@ -110,6 +110,9 @@ public class ReadESClient<T> extends ESClient<T> {
                                              int from, int size, SearchOrder searchOrder, SearchQueryRequest... searchQueryRequests) throws InterruptedException,
             ExecutionException {
         SearchResult<T> searchResult = new SearchResult<T>();
+        if(size < 1) {
+            size = 10;
+        }
         List<T> datas = new ArrayList<T>(size);
         BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
 
@@ -132,6 +135,29 @@ public class ReadESClient<T> extends ESClient<T> {
         }
         searchResult.setListData(datas);
         return searchResult;
+    }
+
+    /**
+     * 根据查询条件查询数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SearchResult<T> queryDataWithTerm(Class clazz, String index, String type, SearchQueryRequest... searchQueryRequests) throws InterruptedException,
+            ExecutionException {
+       return this.queryDataWithTerm(clazz,index,type,-1,-1,null,searchQueryRequests);
+    }
+
+    /**
+     * 根据查询条件查询原始数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SourceSearchResult queryDataForSourceData(String index, String type,
+                                                     SearchQueryRequest... searchQueryRequests) throws InterruptedException,
+            ExecutionException{
+        return queryDataForSourceData(index,type,-1,-1,null,searchQueryRequests);
     }
 
     /**
