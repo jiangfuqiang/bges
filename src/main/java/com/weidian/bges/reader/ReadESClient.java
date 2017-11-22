@@ -106,7 +106,7 @@ public class ReadESClient<T> extends ESClient<T> {
      * @param size
      * @return
      */
-    public SearchResult<T> queryDataWithTerm(Class clazz, String index, String type,
+    public SearchResult<T> queryData(Class clazz, String index, String type,
                                              int from, int size, SearchOrder searchOrder, SearchQueryRequest... searchQueryRequests) throws InterruptedException,
             ExecutionException {
         SearchResult<T> searchResult = new SearchResult<T>();
@@ -138,14 +138,67 @@ public class ReadESClient<T> extends ESClient<T> {
     }
 
     /**
+     * 根据查询条件分页查询数据
+     * @param index
+     * @param type
+     * @param from
+     * @param size
+     * @return
+     */
+    public SearchResult<T> queryData(Class clazz, String index, String type,
+                                     int from, int size, SearchOrder searchOrder, Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException {
+        SearchResult<T> searchResult = new SearchResult<T>();
+        if(size < 1) {
+            size = 10;
+        }
+
+        SearchQueryRequest searchQueryRequest = generateQuery(queryData);
+
+        List<T> datas = new ArrayList<T>(size);
+        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequest);
+
+        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
+
+        SearchResponse searchResponse = searchResponseResult.get();
+        SearchHits searchHits = searchResponse.getHits();
+        searchResult.setTotal(searchHits.getTotalHits());
+
+        SearchHit[] searchHit1 = searchHits.getHits();
+        for(SearchHit searchHit : searchHit1) {
+            Map<String,Object> dataMap = searchHit.getSourceAsMap();
+            ReflectValue reflectValue = new ReflectValue();
+            Object instance = reflectValue.convertToEntity(clazz, dataMap);
+            if(instance != null) {
+                datas.add((T)instance);
+            } else {
+                throw new IllegalArgumentException("object is null for dataMap=" + dataMap.toString());
+            }
+        }
+        searchResult.setListData(datas);
+        return searchResult;
+    }
+
+    /**
      * 根据查询条件查询数据
      * @param index
      * @param type
      * @return
      */
-    public SearchResult<T> queryDataWithTerm(Class clazz, String index, String type, SearchQueryRequest... searchQueryRequests) throws InterruptedException,
+    public SearchResult<T> queryData(Class clazz, String index, String type, SearchQueryRequest... searchQueryRequests) throws InterruptedException,
             ExecutionException {
-       return this.queryDataWithTerm(clazz,index,type,-1,-1,null,searchQueryRequests);
+       return this.queryData(clazz,index,type,-1,-1,null,searchQueryRequests);
+    }
+
+    /**
+     * 根据查询条件查询数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SearchResult<T> queryData(Class clazz, String index, String type, Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException {
+       return this.queryData(clazz,index,type,-1,-1,null,queryData);
     }
 
     /**
@@ -159,6 +212,32 @@ public class ReadESClient<T> extends ESClient<T> {
             ExecutionException{
         return queryDataForSourceData(index,type,-1,-1,null,searchQueryRequests);
     }
+
+    /**
+     * 根据查询条件查询原始数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SourceSearchResult queryDataForSourceData(String index, String type,
+                                                     Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException{
+        return queryDataForSourceData(index,type,-1,-1,null,queryData);
+    }
+
+//    /**
+//     * 根据查询条件查询原始数据
+//     * @param index
+//     * @param type
+//     * @return
+//     */
+//    public SourceSearchResult queryDataForSourceData(String index, String type,
+//                                                     Map<String, Object> queryData,
+//                                                     SearchOperatorEnum searchOperatorEnum,
+//                                                     SearchQueryEnum searchQueryEnum) throws InterruptedException,
+//            ExecutionException{
+//        return queryDataForSourceData(index,type,-1,-1,null,queryData);
+//    }
 
     /**
      * 根据查询条件分页查询原始数据
@@ -195,6 +274,44 @@ public class ReadESClient<T> extends ESClient<T> {
         return searchResult;
     }
 
+
+    /**
+     * 根据查询条件分页查询原始数据
+     * @param index
+     * @param type
+     * @param from
+     * @param size
+     * @return
+     */
+    public SourceSearchResult queryDataForSourceData(String index, String type,
+                                                     int from, int size, SearchOrder searchOrder,
+                                                     Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException{
+        SourceSearchResult searchResult = new SourceSearchResult();
+        if(size < 1) {
+            size = 10;
+        }
+
+        SearchQueryRequest searchQueryRequest = generateQuery(queryData);
+
+        List<Map<String,Object>> datas = new ArrayList<Map<String,Object>>(size);
+        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequest);
+
+        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
+
+        SearchResponse searchResponse = searchResponseResult.get();
+        SearchHits searchHits = searchResponse.getHits();
+        searchResult.setTotal(searchHits.getTotalHits());
+
+        SearchHit[] searchHit1 = searchHits.getHits();
+        for(SearchHit searchHit : searchHit1) {
+            Map<String,Object> source = searchHit.getSourceAsMap();
+            datas.add(source);
+        }
+        searchResult.setListData(datas);
+        return searchResult;
+    }
+
     /**
      * 索引的source转为实体类
      * @param getResponse
@@ -214,6 +331,16 @@ public class ReadESClient<T> extends ESClient<T> {
             }
         }
         return null;
+    }
+
+    private SearchQueryRequest generateQuery(Map<String,Object> queryData) {
+        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
+        for(Map.Entry<String,Object> entry : queryData.entrySet()) {
+            SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData(entry.getKey(), entry.getValue());
+            queryDataList.add(queryData1);
+        }
+        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList, SearchOperatorEnum.MUST, SearchQueryEnum.TERM);
+        return searchQueryRequest;
     }
 
     /**
@@ -416,7 +543,7 @@ public class ReadESClient<T> extends ESClient<T> {
 
                         SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeQueryDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM);
 
-                        SearchResult<TestModel> searchResult = esClient.queryDataWithTerm(TestModel.class,
+                        SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
                                 "test_index1","test",0,20,new SearchOrder("views",SearchOrder.Order.DESC),
                                 searchQueryRequest,rangeSearchQueryRequest);
                         System.out.println(searchResult.getTotal()+"------" + searchResult.getListData().toString());
