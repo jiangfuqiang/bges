@@ -147,7 +147,7 @@ public class ReadESClient<T> extends ESClient<T> {
                                                      SearchQueryRequest... searchQueryRequests) throws InterruptedException,
             ExecutionException{
         SourceSearchResult searchResult = new SourceSearchResult();
-        List<String> datas = new ArrayList<String>(size);
+        List<Map<String,Object>> datas = new ArrayList<Map<String,Object>>(size);
         BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
 
         ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
@@ -158,7 +158,7 @@ public class ReadESClient<T> extends ESClient<T> {
 
         SearchHit[] searchHit1 = searchHits.getHits();
         for(SearchHit searchHit : searchHit1) {
-            String source = searchHit.getSourceAsString();
+            Map<String,Object> source = searchHit.getSourceAsMap();
             datas.add(source);
         }
         searchResult.setListData(datas);

@@ -2,6 +2,7 @@ package com.weidian.bges.model;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by jiang on 17/11/21.
@@ -9,7 +10,7 @@ import java.util.List;
 public class SourceSearchResult implements Serializable {
 
     private long total;
-    private List<String> listData;
+    private List<Map<String,Object>> listData;
 
     public long getTotal() {
         return total;
@@ -19,11 +20,11 @@ public class SourceSearchResult implements Serializable {
         this.total = total;
     }
 
-    public List<String> getListData() {
+    public List<Map<String, Object>> getListData() {
         return listData;
     }
 
-    public void setListData(List<String> listData) {
+    public void setListData(List<Map<String, Object>> listData) {
         this.listData = listData;
     }
 }
