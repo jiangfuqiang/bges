@@ -147,6 +147,10 @@ public class ReadESClient<T> extends ESClient<T> {
                                                      SearchQueryRequest... searchQueryRequests) throws InterruptedException,
             ExecutionException{
         SourceSearchResult searchResult = new SourceSearchResult();
+        if(size < 1) {
+            size = 10;
+        }
+
         List<Map<String,Object>> datas = new ArrayList<Map<String,Object>>(size);
         BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
 
