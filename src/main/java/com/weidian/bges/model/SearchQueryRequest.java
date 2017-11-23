@@ -62,15 +62,15 @@ public class SearchQueryRequest {
 
     public static class QueryData {
         private String name;
-        private Object value;
+        private Object[] values;
         private float boost = 1.0f;
         private boolean isRnage = false;
         private QueryRange start;
         private QueryRange end;
 
-        public QueryData(String name, Object value) {
+        public QueryData(String name, Object... values) {
             this.name = name;
-            this.value = value;
+            this.values = values;
         }
 
         public QueryData(String name, QueryRange start, QueryRange end) {
@@ -88,12 +88,12 @@ public class SearchQueryRequest {
             this.name = name;
         }
 
-        public Object getValue() {
-            return value;
+        public Object[] getValues() {
+            return values;
         }
 
-        public void setValue(Object value) {
-            this.value = value;
+        public void setValues(Object[] values) {
+            this.values = values;
         }
 
         public boolean isRnage() {

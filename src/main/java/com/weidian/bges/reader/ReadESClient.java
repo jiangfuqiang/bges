@@ -409,7 +409,11 @@ public class ReadESClient<T> extends ESClient<T> {
         List<SearchQueryRequest.QueryData> queryDataList = searchQueryRequest.getQueryDataList();
         for(SearchQueryRequest.QueryData queryData : queryDataList) {
             String key = queryData.getName();
-            Object value = queryData.getValue();
+            Object[] values = queryData.getValues();
+            Object value = null;
+            if(values != null && values.length > 0) {
+                value = values[0];
+            }
             //范围查询
             if(queryData.isRnage()) {
                 RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(key);
@@ -447,11 +451,23 @@ public class ReadESClient<T> extends ESClient<T> {
 
                 //设置匹配符
                 if(searchQueryEnum.getType() == SearchQueryEnum.TERM.getType()) {
-                    queryBuilder = QueryBuilders.termQuery(key, value);
+                    if(values.length > 1) {
+                        queryBuilder = QueryBuilders.termsQuery(key, values);
+                    } else {
+                        queryBuilder = QueryBuilders.termQuery(key, value);
+                    }
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH.getType()) {
                     queryBuilder = QueryBuilders.matchQuery(key, value);
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH_PHRASE.getType()) {
                     queryBuilder = QueryBuilders.matchPhraseQuery(key, value);
+                } else if(searchQueryEnum.getType() == SearchQueryEnum.EXISTS.getType()) {
+                    queryBuilder = QueryBuilders.existsQuery(key);
+                } else if(searchQueryEnum.getType() == SearchQueryEnum.FUZZY.getType()) {
+                    queryBuilder = QueryBuilders.fuzzyQuery(key, value);
+                } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH_PHRASE_PREFIX.getType()) {
+                    queryBuilder = QueryBuilders.matchPhraseQuery(key, value);
+                } else if(searchQueryEnum.getType() == searchQueryEnum.WILDCARD.getType()) {
+                    queryBuilder = QueryBuilders.wildcardQuery(key, value.toString());
                 }
                 queryBuilder.boost(queryData.getBoost());
                 //设置查询符
@@ -539,14 +555,14 @@ public class ReadESClient<T> extends ESClient<T> {
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "test_index1", "test", "1");
 //                        System.out.println(Thread.currentThread().getName()+" "+testModel.toString());
                         Map<String,Object> queryData = new HashMap<String,Object>();
-                        queryData.put("username","螃");
+                        queryData.put("content","螃蟹");
                         SearchOrder searchOrder = new SearchOrder("star", SearchOrder.Order.DESC);
                         SourceSearchResult sourceSearchResult = esClient.queryDataForSourceData("comment","book_comment",searchOrder,queryData,SearchOperatorEnum.SHOULD,SearchQueryEnum.MATCH_PHRASE);
 
                         System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
 //                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
 //                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
-//                        SearchQueryRequest.QueryData queryData = new SearchQueryRequest.QueryData("title","蒋富强");
+//                        SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("title","蒋富强");
 //                        queryDataList.add(queryData);
 //
 //                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("views",

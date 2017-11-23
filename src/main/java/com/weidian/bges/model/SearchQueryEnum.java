@@ -6,7 +6,11 @@ package com.weidian.bges.model;
 public enum SearchQueryEnum {
     TERM(0),
     MATCH(1),
-    MATCH_PHRASE(2);
+    MATCH_PHRASE(2),
+    EXISTS(3),
+    FUZZY(4),  //模糊匹配
+    MATCH_PHRASE_PREFIX(5),  //前缀匹配
+    WILDCARD(6);
     private int type;
     SearchQueryEnum(int type) {
         this.type = type;
