@@ -67,6 +67,7 @@ public class SearchQueryRequest {
         private boolean isRnage = false;
         private QueryRange start;
         private QueryRange end;
+        private int mimShouldMatch = -1;
 
         public QueryData(String name, Object... values) {
             this.name = name;
@@ -126,6 +127,14 @@ public class SearchQueryRequest {
 
         public void setBoost(float boost) {
             this.boost = boost;
+        }
+
+        public int getMimShouldMatch() {
+            return mimShouldMatch;
+        }
+
+        public void setMimShouldMatch(int mimShouldMatch) {
+            this.mimShouldMatch = mimShouldMatch;
         }
     }
 }

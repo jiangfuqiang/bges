@@ -480,6 +480,9 @@ public class ReadESClient<T> extends ESClient<T> {
                 } else if(searchOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
                     booleanQueryBuilder.filter(queryBuilder);
                 }
+                if(queryData.getMimShouldMatch() != -1) {
+                    booleanQueryBuilder.minimumShouldMatch(queryData.getMimShouldMatch());
+                }
             }
         }
         return booleanQueryBuilder;
