@@ -155,28 +155,8 @@ public class ReadESClient<T> extends ESClient<T> {
 
         SearchQueryRequest searchQueryRequest = generateQuery(queryData);
 
-        List<T> datas = new ArrayList<T>(size);
-        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequest);
 
-        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
-
-        SearchResponse searchResponse = searchResponseResult.get();
-        SearchHits searchHits = searchResponse.getHits();
-        searchResult.setTotal(searchHits.getTotalHits());
-
-        SearchHit[] searchHit1 = searchHits.getHits();
-        for(SearchHit searchHit : searchHit1) {
-            Map<String,Object> dataMap = searchHit.getSourceAsMap();
-            ReflectValue reflectValue = new ReflectValue();
-            Object instance = reflectValue.convertToEntity(clazz, dataMap);
-            if(instance != null) {
-                datas.add((T)instance);
-            } else {
-                throw new IllegalArgumentException("object is null for dataMap=" + dataMap.toString());
-            }
-        }
-        searchResult.setListData(datas);
-        return searchResult;
+        return queryData(clazz, index, type, from, size,searchOrder,searchQueryRequest);
     }
 
     /**
@@ -313,22 +293,8 @@ public class ReadESClient<T> extends ESClient<T> {
 
         SearchQueryRequest searchQueryRequest = generateQuery(queryData);
 
-        List<Map<String,Object>> datas = new ArrayList<Map<String,Object>>(size);
-        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequest);
 
-        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
-
-        SearchResponse searchResponse = searchResponseResult.get();
-        SearchHits searchHits = searchResponse.getHits();
-        searchResult.setTotal(searchHits.getTotalHits());
-
-        SearchHit[] searchHit1 = searchHits.getHits();
-        for(SearchHit searchHit : searchHit1) {
-            Map<String,Object> source = searchHit.getSourceAsMap();
-            datas.add(source);
-        }
-        searchResult.setListData(datas);
-        return searchResult;
+        return queryDataForSourceData(index,type,from,size,searchOrder,searchQueryRequest);
     }
 
     /**
@@ -462,7 +428,7 @@ public class ReadESClient<T> extends ESClient<T> {
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH_PHRASE.getType()) {
                     queryBuilder = QueryBuilders.matchPhraseQuery(key, value);
                 }
-
+                queryBuilder.boost(queryData.getBoost());
                 //设置查询符
                 if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
                     booleanQueryBuilder.must(queryBuilder);

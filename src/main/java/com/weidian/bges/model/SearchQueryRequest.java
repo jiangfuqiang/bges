@@ -63,6 +63,7 @@ public class SearchQueryRequest {
     public static class QueryData {
         private String name;
         private Object value;
+        private float boost = 1.0f;
         private boolean isRnage = false;
         private QueryRange start;
         private QueryRange end;
@@ -117,6 +118,14 @@ public class SearchQueryRequest {
 
         public void setEnd(QueryRange end) {
             this.end = end;
+        }
+
+        public float getBoost() {
+            return boost;
+        }
+
+        public void setBoost(float boost) {
+            this.boost = boost;
         }
     }
 }
