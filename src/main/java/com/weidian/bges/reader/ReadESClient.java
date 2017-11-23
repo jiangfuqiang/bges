@@ -19,6 +19,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -178,7 +179,7 @@ public class ReadESClient<T> extends ESClient<T> {
      */
     public SearchResult<T> queryData(Class clazz, String index, String type, Map<String, Object> queryData) throws InterruptedException,
             ExecutionException {
-       return this.queryData(clazz,index,type,-1,-1,null,queryData);
+       return this.queryData(clazz,index,type,null,queryData);
     }
 
     /**
@@ -187,14 +188,25 @@ public class ReadESClient<T> extends ESClient<T> {
      * @param type
      * @return
      */
-    public SearchResult<T> queryData(Class clazz, String index, String type, Map<String, Object> queryData,
+    public SearchResult<T> queryData(Class clazz, String index, String type, SearchOrder searchOrder, Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException {
+       return this.queryData(clazz,index,type,-1,-1,searchOrder,queryData);
+    }
+
+    /**
+     * 根据查询条件查询数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SearchResult<T> queryData(Class clazz, String index, String type,SearchOrder searchOrder, Map<String, Object> queryData,
                                      SearchOperatorEnum searchOperatorEnum,
                                      SearchQueryEnum searchQueryEnum) throws InterruptedException,
             ExecutionException {
         SearchQueryRequest searchQueryRequest = generateQuery(queryData);
         searchQueryRequest.setSearchOperatorEnum(searchOperatorEnum);
         searchQueryRequest.setSearchQueryEnum(searchQueryEnum);
-       return this.queryData(clazz,index,type,-1,-1,null,searchQueryRequest);
+       return this.queryData(clazz,index,type,-1,-1,searchOrder,searchQueryRequest);
     }
 
     /**
@@ -218,7 +230,19 @@ public class ReadESClient<T> extends ESClient<T> {
     public SourceSearchResult queryDataForSourceData(String index, String type,
                                                      Map<String, Object> queryData) throws InterruptedException,
             ExecutionException{
-        return queryDataForSourceData(index,type,-1,-1,null,queryData);
+        return queryDataForSourceData(index,type,null,queryData);
+    }
+
+    /**
+     * 根据查询条件查询原始数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SourceSearchResult queryDataForSourceData(String index, String type, SearchOrder searchOrder,
+                                                     Map<String, Object> queryData) throws InterruptedException,
+            ExecutionException{
+        return queryDataForSourceData(index,type,-1,-1,searchOrder,queryData);
     }
 
     /**
@@ -228,6 +252,7 @@ public class ReadESClient<T> extends ESClient<T> {
      * @return
      */
     public SourceSearchResult queryDataForSourceData(String index, String type,
+                                                     SearchOrder searchOrder,
                                                      Map<String, Object> queryData,
                                                      SearchOperatorEnum searchOperatorEnum,
                                                      SearchQueryEnum searchQueryEnum) throws InterruptedException,
@@ -235,7 +260,7 @@ public class ReadESClient<T> extends ESClient<T> {
         SearchQueryRequest searchQueryRequest = generateQuery(queryData);
         searchQueryRequest.setSearchOperatorEnum(searchOperatorEnum);
         searchQueryRequest.setSearchQueryEnum(searchQueryEnum);
-        return queryDataForSourceData(index,type,-1,-1,null,searchQueryRequest);
+        return queryDataForSourceData(index,type,-1,-1,searchOrder,searchQueryRequest);
     }
 
     /**
@@ -513,6 +538,11 @@ public class ReadESClient<T> extends ESClient<T> {
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "ds_mesa_item_metric_db", "item", "462848335654243064266");
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "test_index1", "test", "1");
 //                        System.out.println(Thread.currentThread().getName()+" "+testModel.toString());
+                        Map<String,Object> queryData = new HashMap<String,Object>();
+                        queryData.put("username","螃");
+                        SearchOrder searchOrder = new SearchOrder("star", SearchOrder.Order.DESC);
+                        SourceSearchResult sourceSearchResult = esClient.queryDataForSourceData("comment","book_comment",searchOrder,queryData,SearchOperatorEnum.SHOULD,SearchQueryEnum.MATCH_PHRASE);
+
                         System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
 //                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
 //                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
