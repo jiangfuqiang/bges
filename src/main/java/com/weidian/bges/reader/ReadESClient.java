@@ -202,6 +202,22 @@ public class ReadESClient<T> extends ESClient<T> {
     }
 
     /**
+     * 根据查询条件查询数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SearchResult<T> queryData(Class clazz, String index, String type, Map<String, Object> queryData,
+                                     SearchOperatorEnum searchOperatorEnum,
+                                     SearchQueryEnum searchQueryEnum) throws InterruptedException,
+            ExecutionException {
+        SearchQueryRequest searchQueryRequest = generateQuery(queryData);
+        searchQueryRequest.setSearchOperatorEnum(searchOperatorEnum);
+        searchQueryRequest.setSearchQueryEnum(searchQueryEnum);
+       return this.queryData(clazz,index,type,-1,-1,null,searchQueryRequest);
+    }
+
+    /**
      * 根据查询条件查询原始数据
      * @param index
      * @param type
@@ -225,19 +241,22 @@ public class ReadESClient<T> extends ESClient<T> {
         return queryDataForSourceData(index,type,-1,-1,null,queryData);
     }
 
-//    /**
-//     * 根据查询条件查询原始数据
-//     * @param index
-//     * @param type
-//     * @return
-//     */
-//    public SourceSearchResult queryDataForSourceData(String index, String type,
-//                                                     Map<String, Object> queryData,
-//                                                     SearchOperatorEnum searchOperatorEnum,
-//                                                     SearchQueryEnum searchQueryEnum) throws InterruptedException,
-//            ExecutionException{
-//        return queryDataForSourceData(index,type,-1,-1,null,queryData);
-//    }
+    /**
+     * 根据查询条件查询原始数据
+     * @param index
+     * @param type
+     * @return
+     */
+    public SourceSearchResult queryDataForSourceData(String index, String type,
+                                                     Map<String, Object> queryData,
+                                                     SearchOperatorEnum searchOperatorEnum,
+                                                     SearchQueryEnum searchQueryEnum) throws InterruptedException,
+            ExecutionException{
+        SearchQueryRequest searchQueryRequest = generateQuery(queryData);
+        searchQueryRequest.setSearchOperatorEnum(searchOperatorEnum);
+        searchQueryRequest.setSearchQueryEnum(searchQueryEnum);
+        return queryDataForSourceData(index,type,-1,-1,null,searchQueryRequest);
+    }
 
     /**
      * 根据查询条件分页查询原始数据
