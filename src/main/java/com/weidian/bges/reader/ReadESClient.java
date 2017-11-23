@@ -513,25 +513,25 @@ public class ReadESClient<T> extends ESClient<T> {
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "ds_mesa_item_metric_db", "item", "462848335654243064266");
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "test_index1", "test", "1");
 //                        System.out.println(Thread.currentThread().getName()+" "+testModel.toString());
-
-                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
-                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
-                        SearchQueryRequest.QueryData queryData = new SearchQueryRequest.QueryData("title","蒋富强");
-                        queryDataList.add(queryData);
-
-                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("views",
-                                new QueryRange("1000", QueryRange.RangeOp.GTE),new QueryRange("2000", QueryRange.RangeOp.LTE));
-
-                        rangeQueryDataList.add(rangeQueryData);
-
-                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchOperatorEnum.MUST,SearchQueryEnum.TERM);
-
-                        SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeQueryDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM);
-
-                        SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
-                                "test_index1","test",0,20,new SearchOrder("views",SearchOrder.Order.DESC),
-                                searchQueryRequest,rangeSearchQueryRequest);
-                        System.out.println(searchResult.getTotal()+"------" + searchResult.getListData().toString());
+                        System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
+//                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
+//                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
+//                        SearchQueryRequest.QueryData queryData = new SearchQueryRequest.QueryData("title","蒋富强");
+//                        queryDataList.add(queryData);
+//
+//                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("views",
+//                                new QueryRange("1000", QueryRange.RangeOp.GTE),new QueryRange("2000", QueryRange.RangeOp.LTE));
+//
+//                        rangeQueryDataList.add(rangeQueryData);
+//
+//                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchOperatorEnum.MUST,SearchQueryEnum.TERM);
+//
+//                        SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeQueryDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM);
+//
+//                        SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
+//                                "test_index1","test",0,20,new SearchOrder("views",SearchOrder.Order.DESC),
+//                                searchQueryRequest,rangeSearchQueryRequest);
+//                        System.out.println(searchResult.getTotal()+"------" + searchResult.getListData().toString());
 //                        List<TestModel> datas = esClient.multiGetDataByIds(TestModel.class,"test_index1","test","2","3","4","1");
 //                        System.out.println(datas.toString());
 

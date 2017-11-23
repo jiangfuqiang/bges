@@ -45,7 +45,7 @@ public class WriteESClient<T> extends ESClient<T> {
             indexRequest.id(dataMap.get(INDEX_ID_NAME).toString());
             dataMap.remove(INDEX_ID_NAME);
         }
-        indexRequestBuilder.setSource(dataMap);
+        indexRequest.source(dataMap);
         ActionFuture<IndexResponse> actionFuture = client.index(indexRequest);
 
         releaseClient(client);
@@ -78,7 +78,7 @@ public class WriteESClient<T> extends ESClient<T> {
                 indexRequest.id(dataMap.get(INDEX_ID_NAME).toString());
                 dataMap.remove(INDEX_ID_NAME);
             }
-            indexRequestBuilder.setSource(dataMap);
+            indexRequest.source(dataMap);
             bulkRequestBuilder.add(indexRequest);
         }
 
@@ -119,10 +119,10 @@ public class WriteESClient<T> extends ESClient<T> {
             dataMap.remove(INDEX_ID_NAME);
         }
         IndexRequestBuilder indexRequestBuilder = client.prepareIndex(index,type);
-        indexRequestBuilder.setSource(dataMap);
 
         IndexRequest indexRequest = indexRequestBuilder.request();
         indexRequest.id(id);
+        indexRequest.source(dataMap);
 
         UpdateRequestBuilder updateRequest = client.prepareUpdate();
         updateRequest.setDoc(dataMap);
@@ -134,6 +134,9 @@ public class WriteESClient<T> extends ESClient<T> {
         updateRequest1.id(id);
 
         ActionFuture<UpdateResponse> actionFuture = client.update(updateRequest1);
+
+        releaseClient(client);
+
         UpdateResponse updateResponse = actionFuture.get();
 
         RestStatus restStatus = updateResponse.status();
