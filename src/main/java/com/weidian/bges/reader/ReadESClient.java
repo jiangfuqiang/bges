@@ -523,7 +523,7 @@ public class ReadESClient<T> extends ESClient<T> {
             queryBuilder = QueryBuilders.boolQuery();
         }
 
-        if(queryRequest != null) {
+        if(queryRequest != null && isBool) {
             BoolQueryBuilder booleanQueryBuilder = (BoolQueryBuilder)queryBuilder;
             if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
                 booleanQueryBuilder.must(getBoolQueryWithTerm(queryRequest));
