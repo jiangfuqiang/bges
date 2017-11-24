@@ -4,16 +4,15 @@ import com.weidian.bges.base.ESClient;
 import com.weidian.bges.base.ESConfiguration;
 import com.weidian.bges.model.*;
 import com.weidian.bges.reflect.ReflectValue;
+import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
 import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortOrder;
@@ -115,7 +114,7 @@ public class ReadESClient<T> extends ESClient<T> {
             size = 10;
         }
         List<T> datas = new ArrayList<T>(size);
-        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
+        QueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
 
         ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
 
@@ -281,9 +280,9 @@ public class ReadESClient<T> extends ESClient<T> {
         }
 
         List<Map<String,Object>> datas = new ArrayList<Map<String,Object>>(size);
-        BoolQueryBuilder booleanQueryBuilder = getBoolQueryWithTerms(searchQueryRequests);
+        QueryBuilder queryBuilder = getBoolQueryWithTerms(searchQueryRequests);
 
-        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(booleanQueryBuilder,index,from,size,searchOrder);
+        ListenableActionFuture<SearchResponse> searchResponseResult = getSearchRequest(queryBuilder,index,from,size,searchOrder);
 
         SearchResponse searchResponse = searchResponseResult.get();
         SearchHits searchHits = searchResponse.getHits();
@@ -349,7 +348,7 @@ public class ReadESClient<T> extends ESClient<T> {
             SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData(entry.getKey(), entry.getValue());
             queryDataList.add(queryData1);
         }
-        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList, SearchOperatorEnum.MUST, SearchQueryEnum.TERM);
+        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList, SearchQueryEnum.TERM);
         return searchQueryRequest;
     }
 
@@ -372,40 +371,46 @@ public class ReadESClient<T> extends ESClient<T> {
      * 构建 query
      * @return
      */
-    private BoolQueryBuilder getBoolQueryWithTerms(SearchQueryRequest... searchQueryRequests) {
-        BoolQueryBuilder booleanQueryBuilder = QueryBuilders.boolQuery();
+    private QueryBuilder getBoolQueryWithTerms(SearchQueryRequest... searchQueryRequests) {
+        QueryBuilder queryBuilder = QueryBuilders.boolQuery();
         if(searchQueryRequests.length == 1) {
-            booleanQueryBuilder = getBoolQueryWithTerm(searchQueryRequests[0]);
+            SearchQueryRequest searchQueryRequest = searchQueryRequests[0];
+            queryBuilder = getBoolQueryWithTerm(searchQueryRequest);
+
         } else {
             for(SearchQueryRequest queryRequest : searchQueryRequests) {
                 SearchOperatorEnum queryRequestOperatorEnum = queryRequest.getQueryRequestOpatorEnum();
                 if(queryRequest != null) {
 
-                    concustorQueryBuilder(queryRequest,booleanQueryBuilder,true);
+                    queryBuilder = concustorQueryBuilder(queryRequest,true);
                 }
             }
         }
-        return booleanQueryBuilder;
+        return queryBuilder;
     }
 
     /**
      * 构建 query
      * @return
      */
-    private BoolQueryBuilder getBoolQueryWithTerm(SearchQueryRequest searchQueryRequest) {
-        BoolQueryBuilder booleanQueryBuilder = QueryBuilders.boolQuery();
+    private QueryBuilder getBoolQueryWithTerm(SearchQueryRequest searchQueryRequest) {
+        QueryBuilder queryBuilder = null;
+
+        boolean isBool = searchQueryRequest.isBool();  //是否是bool查询
 
         SearchQueryRequest queryRequest = searchQueryRequest.getSearchQueryRequest();
         SearchOperatorEnum queryRequestOperatorEnum = searchQueryRequest.getQueryRequestOpatorEnum();
         if(queryRequest != null) {
-            concustorQueryBuilder(queryRequest,booleanQueryBuilder,false);
+            queryBuilder = concustorQueryBuilder(queryRequest,false);
         }
 
-
+        BoolQueryBuilder booleanQueryBuilder = null;
+        if(isBool) {
+            booleanQueryBuilder = QueryBuilders.boolQuery();
+        }
         SearchQueryEnum searchQueryEnum = searchQueryRequest.getSearchQueryEnum();
         SearchOperatorEnum searchOperatorEnum = searchQueryRequest.getSearchOperatorEnum();
 
-        QueryBuilder queryBuilder = null;
         List<SearchQueryRequest.QueryData> queryDataList = searchQueryRequest.getQueryDataList();
         for(SearchQueryRequest.QueryData queryData : queryDataList) {
             String key = queryData.getName();
@@ -438,26 +443,38 @@ public class ReadESClient<T> extends ESClient<T> {
                         rangeQueryBuilder.lte(endValue);
                     }
                 }
-                if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
-                    booleanQueryBuilder.must(rangeQueryBuilder);
-                } else if (searchOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
-                    booleanQueryBuilder.should(rangeQueryBuilder);
-                } else if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
-                    booleanQueryBuilder.mustNot(rangeQueryBuilder);
-                } else if(searchOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
-                    booleanQueryBuilder.filter(rangeQueryBuilder);
+                if(isBool) {
+                    if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
+                        booleanQueryBuilder.must(rangeQueryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
+                        booleanQueryBuilder.should(rangeQueryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
+                        booleanQueryBuilder.mustNot(rangeQueryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
+                        booleanQueryBuilder.filter(rangeQueryBuilder);
+                    }
+
+                    queryBuilder = booleanQueryBuilder;
                 }
             } else {
 
                 //设置匹配符
                 if(searchQueryEnum.getType() == SearchQueryEnum.TERM.getType()) {
                     if(values.length > 1) {
+
                         queryBuilder = QueryBuilders.termsQuery(key, values);
                     } else {
                         queryBuilder = QueryBuilders.termQuery(key, value);
                     }
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH.getType()) {
-                    queryBuilder = QueryBuilders.matchQuery(key, value);
+                    Operator operator = Operator.OR;
+                    if(queryData.getOperator() != null) {
+                        if("and".equals(queryData.getOperator())) {
+                            operator = Operator.AND;
+                        }
+                    }
+
+                    queryBuilder = QueryBuilders.matchQuery(key, value).operator(operator).analyzer("ik_smart");
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.MATCH_PHRASE.getType()) {
                     queryBuilder = QueryBuilders.matchPhraseQuery(key, value);
                 } else if(searchQueryEnum.getType() == SearchQueryEnum.EXISTS.getType()) {
@@ -470,31 +487,43 @@ public class ReadESClient<T> extends ESClient<T> {
                     queryBuilder = QueryBuilders.wildcardQuery(key, value.toString());
                 }
                 queryBuilder.boost(queryData.getBoost());
-                //设置查询符
-                if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
-                    booleanQueryBuilder.must(queryBuilder);
-                } else if (searchOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
-                    booleanQueryBuilder.should(queryBuilder);
-                } else if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
-                    booleanQueryBuilder.mustNot(queryBuilder);
-                } else if(searchOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
-                    booleanQueryBuilder.filter(queryBuilder);
+
+                if(isBool) {
+                    //设置查询符
+                    if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
+                        booleanQueryBuilder.must(queryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
+                        booleanQueryBuilder.should(queryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
+                        booleanQueryBuilder.mustNot(queryBuilder);
+                    } else if (searchOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
+                        booleanQueryBuilder.filter(queryBuilder);
+                    }
+                    if (queryData.getMimShouldMatch() != -1) {
+                        booleanQueryBuilder.minimumShouldMatch(queryData.getMimShouldMatch());
+                    }
                 }
-                if(queryData.getMimShouldMatch() != -1) {
-                    booleanQueryBuilder.minimumShouldMatch(queryData.getMimShouldMatch());
-                }
+
             }
         }
-        return booleanQueryBuilder;
+        return queryBuilder;
     }
 
+    private QueryBuilder concustorQueryBuilder(SearchQueryRequest queryRequest, boolean isRoot) {
+        QueryBuilder queryBuilder = null;
+        boolean isBool = queryRequest.isBool();
 
-    private void concustorQueryBuilder(SearchQueryRequest queryRequest,BoolQueryBuilder booleanQueryBuilder, boolean isRoot) {
         SearchOperatorEnum queryRequestOperatorEnum = queryRequest.getSearchOperatorEnum();
         if(!isRoot) {  //如果是子查询
             queryRequestOperatorEnum = queryRequest.getQueryRequestOpatorEnum();
         }
+
+        if(isBool) {
+            queryBuilder = QueryBuilders.boolQuery();
+        }
+
         if(queryRequest != null) {
+            BoolQueryBuilder booleanQueryBuilder = (BoolQueryBuilder)queryBuilder;
             if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
                 booleanQueryBuilder.must(getBoolQueryWithTerm(queryRequest));
             } else if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
@@ -505,11 +534,12 @@ public class ReadESClient<T> extends ESClient<T> {
                 booleanQueryBuilder.filter(getBoolQueryWithTerm(queryRequest));
             }
         }
+        return queryBuilder;
     }
 
     /**
      * 获取搜索结果
-     * @param boolQueryBuilder
+     * @param queryBuilder
      * @param index
      * @param from
      * @param size
@@ -517,13 +547,13 @@ public class ReadESClient<T> extends ESClient<T> {
      * @return
      * @throws InterruptedException
      */
-    private ListenableActionFuture<SearchResponse> getSearchRequest(BoolQueryBuilder boolQueryBuilder, String index, int from, int size,
+    private ListenableActionFuture<SearchResponse> getSearchRequest(QueryBuilder queryBuilder, String index, int from, int size,
                                                                     SearchOrder searchOrder) throws InterruptedException{
 
         Client client = getClient();
 
         SearchRequestBuilder searchRequestBuilder = client.prepareSearch(index);
-        searchRequestBuilder.setQuery(boolQueryBuilder);
+        searchRequestBuilder.setQuery(queryBuilder);
         if(from >= 0) {
             searchRequestBuilder.setFrom(from);
         }
@@ -557,30 +587,32 @@ public class ReadESClient<T> extends ESClient<T> {
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "ds_mesa_item_metric_db", "item", "462848335654243064266");
 //                        TestModel testModel = esClient.getDataById(TestModel.class, "test_index1", "test", "1");
 //                        System.out.println(Thread.currentThread().getName()+" "+testModel.toString());
-                        Map<String,Object> queryData = new HashMap<String,Object>();
-                        queryData.put("content","螃蟹");
-                        SearchOrder searchOrder = new SearchOrder("star", SearchOrder.Order.DESC);
-                        SourceSearchResult sourceSearchResult = esClient.queryDataForSourceData("comment","book_comment",searchOrder,queryData,SearchOperatorEnum.SHOULD,SearchQueryEnum.MATCH_PHRASE);
-
-                        System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
-//                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
+//                        Map<String,Object> queryData = new HashMap<String,Object>();
+//                        queryData.put("content","阿里也是一个有尊严有骄傲的人");
+//
+//                        SearchOrder searchOrder = new SearchOrder("star", SearchOrder.Order.DESC);
+//                        SourceSearchResult sourceSearchResult = esClient.queryDataForSourceData("comment","book_comment",searchOrder,queryData,SearchOperatorEnum.SHOULD,SearchQueryEnum.MATCH);
+//
+//                        System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
+                        List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
 //                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
-//                        SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("title","蒋富强");
-//                        queryDataList.add(queryData);
+                        SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("content","追风筝人的看");
+//                        queryData1.setMimShouldMatch(1);
+                        queryDataList.add(queryData1);
 //
 //                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("views",
 //                                new QueryRange("1000", QueryRange.RangeOp.GTE),new QueryRange("2000", QueryRange.RangeOp.LTE));
-//
+
 //                        rangeQueryDataList.add(rangeQueryData);
 //
-//                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchOperatorEnum.MUST,SearchQueryEnum.TERM);
+                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchQueryEnum.MATCH);
 //
 //                        SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeQueryDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM);
 //
-//                        SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
-//                                "test_index1","test",0,20,new SearchOrder("views",SearchOrder.Order.DESC),
-//                                searchQueryRequest,rangeSearchQueryRequest);
-//                        System.out.println(searchResult.getTotal()+"------" + searchResult.getListData().toString());
+                        SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
+                                "comment","book_comment",0,20,null,
+                                searchQueryRequest);
+                        System.out.println(searchResult.getTotal()+"------" + searchResult.getListData().toString());
 //                        List<TestModel> datas = esClient.multiGetDataByIds(TestModel.class,"test_index1","test","2","3","4","1");
 //                        System.out.println(datas.toString());
 

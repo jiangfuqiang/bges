@@ -13,11 +13,17 @@ public class SearchQueryRequest {
     private SearchQueryEnum searchQueryEnum;   //term,match,matchphrase.....
     private SearchQueryRequest searchQueryRequest;
     private SearchOperatorEnum queryRequestOpatorEnum;   //searchQueryRequest该如何查询
+    private boolean isBool = false;
 
-    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum) {
+    public SearchQueryRequest(List<QueryData> queryDataList,SearchQueryEnum searchQueryEnum) {
+        this(queryDataList,null,searchQueryEnum,false);
+    }
+
+    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum, boolean isBool) {
         this.queryDataList = queryDataList;
         this.searchOperatorEnum = searchOperatorEnum;
         this.searchQueryEnum = searchQueryEnum;
+        this.isBool = isBool;
     }
 
     public List<QueryData> getQueryDataList() {
@@ -60,6 +66,14 @@ public class SearchQueryRequest {
         this.queryRequestOpatorEnum = queryRequestOpatorEnum;
     }
 
+    public boolean isBool() {
+        return isBool;
+    }
+
+    public void setBool(boolean bool) {
+        isBool = bool;
+    }
+
     public static class QueryData {
         private String name;
         private Object[] values;
@@ -68,6 +82,7 @@ public class SearchQueryRequest {
         private QueryRange start;
         private QueryRange end;
         private int mimShouldMatch = -1;
+        private String operator;
 
         public QueryData(String name, Object... values) {
             this.name = name;
@@ -135,6 +150,14 @@ public class SearchQueryRequest {
 
         public void setMimShouldMatch(int mimShouldMatch) {
             this.mimShouldMatch = mimShouldMatch;
+        }
+
+        public String getOperator() {
+            return operator;
+        }
+
+        public void setOperator(String operator) {
+            this.operator = operator;
         }
     }
 }

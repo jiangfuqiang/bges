@@ -7,6 +7,7 @@ import com.weidian.bges.model.TestModel;
 import com.weidian.bges.pool.ClientPool;
 import com.weidian.bges.reflect.ReflectValue;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequestBuilder;
 import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -38,25 +39,28 @@ public class ESClient<T> {
 
     private volatile static ClientPool clientPool = null;
 
-    protected ESConfiguration esConfiguration;
+    protected static ESConfiguration esConfiguration;
 
     public ESClient(){}
     public ESClient(ESConfiguration esConfiguration) {
-        this.esConfiguration = esConfiguration;
-        try {
-            init(esConfiguration);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if(this.getEsConfiguration() == null) {
+            synchronized (logger) {
+                if(this.getEsConfiguration() == null) {
+                    this.esConfiguration = esConfiguration;
+                    try {
+                        init(esConfiguration);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
     }
 
     public void init(ESConfiguration esConfiguration) throws Exception{
         if(clientPool == null) {
-            synchronized (logger) {
-                if(clientPool == null) {
-                    clientPool = new ClientPool(esConfiguration);
-                }
-            }
+
+            clientPool = new ClientPool(esConfiguration);
         }
     }
 

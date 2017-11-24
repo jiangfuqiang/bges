@@ -18,6 +18,10 @@ public class TestModel {
 
     private long views;
 
+    @ColName(name="movie_title")
+    private String movieTitle;
+    private String content;
+
     public String getId() {
         return id;
     }
@@ -43,7 +47,7 @@ public class TestModel {
     }
 
     public String toString() {
-        return shopId + "==" + date + " ==" + title + "==" + views;
+        return shopId + "==" + date + " ==" + title + "==" + views + " " + movieTitle + " " + content;
     }
 
     public String getTitle() {
@@ -60,5 +64,21 @@ public class TestModel {
 
     public void setViews(long views) {
         this.views = views;
+    }
+
+    public String getMovieTitle() {
+        return movieTitle;
+    }
+
+    public void setMovieTitle(String movie_title) {
+        this.movieTitle = movie_title;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }
