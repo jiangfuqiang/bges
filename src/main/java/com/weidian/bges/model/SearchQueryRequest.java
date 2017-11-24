@@ -11,19 +11,29 @@ public class SearchQueryRequest {
     private List<QueryData> queryDataList;
     private SearchOperatorEnum searchOperatorEnum;  //should,must....
     private SearchQueryEnum searchQueryEnum;   //term,match,matchphrase.....
-    private SearchQueryRequest searchQueryRequest;
-    private SearchOperatorEnum queryRequestOpatorEnum;   //searchQueryRequest该如何查询
+    private SearchQueryRequest[] searchQueryRequests;
     private boolean isBool = false;
 
-    public SearchQueryRequest(List<QueryData> queryDataList,SearchQueryEnum searchQueryEnum) {
-        this(queryDataList,null,searchQueryEnum,false);
+    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum,SearchQueryEnum searchQueryEnum,
+                              SearchQueryRequest... searchQueryRequests) {
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,false,searchQueryRequests);
+    }
+
+    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum,SearchQueryEnum searchQueryEnum) {
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,false);
     }
 
     public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum, boolean isBool) {
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,isBool,null);
+    }
+
+    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum,
+                              boolean isBool,SearchQueryRequest... searchQueryRequests) {
         this.queryDataList = queryDataList;
         this.searchOperatorEnum = searchOperatorEnum;
         this.searchQueryEnum = searchQueryEnum;
         this.isBool = isBool;
+        this.searchQueryRequests = searchQueryRequests;
     }
 
     public List<QueryData> getQueryDataList() {
@@ -50,20 +60,12 @@ public class SearchQueryRequest {
         this.searchQueryEnum = searchQueryEnum;
     }
 
-    public SearchQueryRequest getSearchQueryRequest() {
-        return searchQueryRequest;
+    public SearchQueryRequest[] getSearchQueryRequests() {
+        return searchQueryRequests;
     }
 
-    public void setSearchQueryRequest(SearchQueryRequest searchQueryRequest) {
-        this.searchQueryRequest = searchQueryRequest;
-    }
-
-    public SearchOperatorEnum getQueryRequestOpatorEnum() {
-        return queryRequestOpatorEnum;
-    }
-
-    public void setQueryRequestOpatorEnum(SearchOperatorEnum queryRequestOpatorEnum) {
-        this.queryRequestOpatorEnum = queryRequestOpatorEnum;
+    public void setSearchQueryRequests(SearchQueryRequest[] searchQueryRequests) {
+        this.searchQueryRequests = searchQueryRequests;
     }
 
     public boolean isBool() {

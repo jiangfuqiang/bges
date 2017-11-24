@@ -348,7 +348,7 @@ public class ReadESClient<T> extends ESClient<T> {
             SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData(entry.getKey(), entry.getValue());
             queryDataList.add(queryData1);
         }
-        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList, SearchQueryEnum.TERM);
+        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList, SearchOperatorEnum.MUST, SearchQueryEnum.TERM);
         return searchQueryRequest;
     }
 
@@ -373,18 +373,19 @@ public class ReadESClient<T> extends ESClient<T> {
      */
     private QueryBuilder getBoolQueryWithTerms(SearchQueryRequest... searchQueryRequests) {
         QueryBuilder queryBuilder = QueryBuilders.boolQuery();
-        if(searchQueryRequests.length == 1) {
-            SearchQueryRequest searchQueryRequest = searchQueryRequests[0];
-            queryBuilder = getBoolQueryWithTerm(searchQueryRequest);
-
-        } else {
-            for(SearchQueryRequest queryRequest : searchQueryRequests) {
-                SearchOperatorEnum queryRequestOperatorEnum = queryRequest.getQueryRequestOpatorEnum();
-                if(queryRequest != null) {
-
-                    queryBuilder = concustorQueryBuilder(queryRequest,true);
+        BoolQueryBuilder boolQueryBuilder = null;
+        for(SearchQueryRequest queryRequest : searchQueryRequests) {
+            if(queryRequest != null) {
+                if(queryRequest.isBool()) {
+                    boolQueryBuilder = QueryBuilders.boolQuery();
+                    getBoolQueryWithTerm(queryRequest, boolQueryBuilder, queryRequest);
+                } else {
+                    queryBuilder = getBoolQueryWithTerm(queryRequest, boolQueryBuilder, queryRequest);
                 }
             }
+        }
+        if(boolQueryBuilder != null) {
+            queryBuilder = boolQueryBuilder;
         }
         return queryBuilder;
     }
@@ -393,21 +394,21 @@ public class ReadESClient<T> extends ESClient<T> {
      * 构建 query
      * @return
      */
-    private QueryBuilder getBoolQueryWithTerm(SearchQueryRequest searchQueryRequest) {
-        QueryBuilder queryBuilder = null;
+    private QueryBuilder getBoolQueryWithTerm(SearchQueryRequest searchQueryRequest, QueryBuilder queryBuilder, SearchQueryRequest fatherSearchQueryRequest) {
 
         boolean isBool = searchQueryRequest.isBool();  //是否是bool查询
 
-        SearchQueryRequest queryRequest = searchQueryRequest.getSearchQueryRequest();
-        SearchOperatorEnum queryRequestOperatorEnum = searchQueryRequest.getQueryRequestOpatorEnum();
-        if(queryRequest != null) {
-            queryBuilder = concustorQueryBuilder(queryRequest,false);
-        }
+
 
         BoolQueryBuilder booleanQueryBuilder = null;
-        if(isBool) {
-            booleanQueryBuilder = QueryBuilders.boolQuery();
+        if(fatherSearchQueryRequest.isBool()) {
+            booleanQueryBuilder = (BoolQueryBuilder) queryBuilder;
         }
+
+        if(queryBuilder != null && queryBuilder instanceof BoolQueryBuilder) {
+            booleanQueryBuilder = (BoolQueryBuilder)queryBuilder;
+        }
+
         SearchQueryEnum searchQueryEnum = searchQueryRequest.getSearchQueryEnum();
         SearchOperatorEnum searchOperatorEnum = searchQueryRequest.getSearchOperatorEnum();
 
@@ -443,6 +444,9 @@ public class ReadESClient<T> extends ESClient<T> {
                         rangeQueryBuilder.lte(endValue);
                     }
                 }
+
+
+
                 if(isBool) {
                     if (searchOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
                         booleanQueryBuilder.must(rangeQueryBuilder);
@@ -455,6 +459,8 @@ public class ReadESClient<T> extends ESClient<T> {
                     }
 
                     queryBuilder = booleanQueryBuilder;
+                } else {
+                    queryBuilder = rangeQueryBuilder;
                 }
             } else {
 
@@ -507,34 +513,37 @@ public class ReadESClient<T> extends ESClient<T> {
 
             }
         }
-        return queryBuilder;
-    }
 
-    private QueryBuilder concustorQueryBuilder(SearchQueryRequest queryRequest, boolean isRoot) {
-        QueryBuilder queryBuilder = null;
-        boolean isBool = queryRequest.isBool();
+//        SearchQueryRequest[] searchQueryRequests = searchQueryRequest.getSearchQueryRequests();
+//        if(searchQueryRequests != null) {
+//            fatherSearchQueryRequest = searchQueryRequest;
+//            for(SearchQueryRequest searchQueryRequest1 : searchQueryRequests) {
+//                boolean subIsBool = searchQueryRequest1.isBool();
+//                SearchOperatorEnum searchOperatorEnum1 = searchQueryRequest1.getSearchOperatorEnum();
+//                QueryBuilder subQueryBuilder = null;
+//                if(subIsBool) {
+//                    BoolQueryBuilder subBoolQuery = QueryBuilders.boolQuery();
+//                    getBoolQueryWithTerm(searchQueryRequest1, subBoolQuery, fatherSearchQueryRequest);
+//                    subQueryBuilder = subBoolQuery;
+//                } else {
+//                    //如果不是bool，则认为只执行第一条query
+//                    subQueryBuilder = getBoolQueryWithTerm(searchQueryRequest1, null,fatherSearchQueryRequest);
+//                }
+//
+//
+//                if (searchOperatorEnum1.getType() == SearchOperatorEnum.MUST.getType()) {
+//                    booleanQueryBuilder.must(subQueryBuilder);
+//                } else if (searchOperatorEnum1.getType() == SearchOperatorEnum.SHOULD.getType()) {
+//                    booleanQueryBuilder.should(subQueryBuilder);
+//                } else if (searchOperatorEnum1.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
+//                    booleanQueryBuilder.should(subQueryBuilder);
+//                } else if (searchOperatorEnum1.getType() == SearchOperatorEnum.FILTER.getType()) {
+//                    booleanQueryBuilder.filter(subQueryBuilder);
+//                }
+//
+//            }
+//        }
 
-        SearchOperatorEnum queryRequestOperatorEnum = queryRequest.getSearchOperatorEnum();
-        if(!isRoot) {  //如果是子查询
-            queryRequestOperatorEnum = queryRequest.getQueryRequestOpatorEnum();
-        }
-
-        if(isBool) {
-            queryBuilder = QueryBuilders.boolQuery();
-        }
-
-        if(queryRequest != null && isBool) {
-            BoolQueryBuilder booleanQueryBuilder = (BoolQueryBuilder)queryBuilder;
-            if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.MUST.getType()) {
-                booleanQueryBuilder.must(getBoolQueryWithTerm(queryRequest));
-            } else if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.SHOULD.getType()) {
-                booleanQueryBuilder.should(getBoolQueryWithTerm(queryRequest));
-            } else if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.MUST_NOT.getType()) {
-                booleanQueryBuilder.should(getBoolQueryWithTerm(queryRequest));
-            } else if(queryRequestOperatorEnum.getType() == SearchOperatorEnum.FILTER.getType()) {
-                booleanQueryBuilder.filter(getBoolQueryWithTerm(queryRequest));
-            }
-        }
         return queryBuilder;
     }
 
@@ -596,19 +605,22 @@ public class ReadESClient<T> extends ESClient<T> {
 //
 //                        System.out.println(esClient.getSourceMapById("comment","book_comment","1"));
                         List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
+                        List<SearchQueryRequest.QueryData> rangeDataList = new ArrayList<SearchQueryRequest.QueryData>();
 //                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
                         SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("content","追风筝人的看");
+//                        SearchQueryRequest.QueryData queryData2 = new SearchQueryRequest.QueryData("movie_title","追风筝的人");
 //                        queryData1.setMimShouldMatch(1);
                         queryDataList.add(queryData1);
-//
-//                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("views",
-//                                new QueryRange("1000", QueryRange.RangeOp.GTE),new QueryRange("2000", QueryRange.RangeOp.LTE));
+//                        queryDataList.add(queryData2);
 
+//
+                        SearchQueryRequest.QueryData rangeQueryData = new SearchQueryRequest.QueryData("star",
+                                new QueryRange("40", QueryRange.RangeOp.GTE),new QueryRange("50", QueryRange.RangeOp.LTE));
+                        rangeDataList.add(rangeQueryData);
 //                        rangeQueryDataList.add(rangeQueryData);
 //
-                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchQueryEnum.MATCH);
-//
-//                        SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeQueryDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM);
+                        SearchQueryRequest rangeSearchQueryRequest = new SearchQueryRequest(rangeDataList,SearchOperatorEnum.FILTER,SearchQueryEnum.TERM, true);
+                        SearchQueryRequest searchQueryRequest = new SearchQueryRequest(queryDataList,SearchOperatorEnum.SHOULD,SearchQueryEnum.MATCH,rangeSearchQueryRequest);
 //
                         SearchResult<TestModel> searchResult = esClient.queryData(TestModel.class,
                                 "comment","book_comment",0,20,null,
