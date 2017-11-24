@@ -502,6 +502,7 @@ public class ReadESClient<T> extends ESClient<T> {
                     if (queryData.getMimShouldMatch() != -1) {
                         booleanQueryBuilder.minimumShouldMatch(queryData.getMimShouldMatch());
                     }
+                    queryBuilder = booleanQueryBuilder;
                 }
 
             }
