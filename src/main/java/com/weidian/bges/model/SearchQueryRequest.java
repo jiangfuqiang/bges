@@ -12,27 +12,27 @@ public class SearchQueryRequest {
     private SearchOperatorEnum searchOperatorEnum;  //should,must....
     private SearchQueryEnum searchQueryEnum;   //term,match,matchphrase.....
     private SearchQueryRequest[] searchQueryRequests;
-    private boolean isBool = false;
+    private QueryPhraseEnum queryPhraseEnum = QueryPhraseEnum.DEFAULT;
 
     public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum,SearchQueryEnum searchQueryEnum,
                               SearchQueryRequest... searchQueryRequests) {
-        this(queryDataList,searchOperatorEnum,searchQueryEnum,false,searchQueryRequests);
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,QueryPhraseEnum.DEFAULT,searchQueryRequests);
     }
 
     public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum,SearchQueryEnum searchQueryEnum) {
-        this(queryDataList,searchOperatorEnum,searchQueryEnum,false);
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,QueryPhraseEnum.DEFAULT);
     }
 
-    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum, boolean isBool) {
-        this(queryDataList,searchOperatorEnum,searchQueryEnum,isBool,null);
+    public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum, QueryPhraseEnum queryPhraseEnum) {
+        this(queryDataList,searchOperatorEnum,searchQueryEnum,queryPhraseEnum,null);
     }
 
     public SearchQueryRequest(List<QueryData> queryDataList, SearchOperatorEnum searchOperatorEnum, SearchQueryEnum searchQueryEnum,
-                              boolean isBool,SearchQueryRequest... searchQueryRequests) {
+                              QueryPhraseEnum queryPhraseEnum,SearchQueryRequest... searchQueryRequests) {
         this.queryDataList = queryDataList;
         this.searchOperatorEnum = searchOperatorEnum;
         this.searchQueryEnum = searchQueryEnum;
-        this.isBool = isBool;
+        this.queryPhraseEnum = queryPhraseEnum;
         this.searchQueryRequests = searchQueryRequests;
     }
 
@@ -68,12 +68,12 @@ public class SearchQueryRequest {
         this.searchQueryRequests = searchQueryRequests;
     }
 
-    public boolean isBool() {
-        return isBool;
+    public QueryPhraseEnum getQueryPhraseEnum() {
+        return queryPhraseEnum;
     }
 
-    public void setBool(boolean bool) {
-        isBool = bool;
+    public void setQueryPhraseEnum(QueryPhraseEnum queryPhraseEnum) {
+        this.queryPhraseEnum = queryPhraseEnum;
     }
 
     public static class QueryData {
