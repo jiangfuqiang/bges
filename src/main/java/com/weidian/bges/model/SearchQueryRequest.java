@@ -85,6 +85,7 @@ public class SearchQueryRequest {
         private QueryRange end;
         private int mimShouldMatch = -1;
         private String operator;
+        private float tieBreaker = 0.0f;  //用于dis_max
 
         public QueryData(String name, Object... values) {
             this.name = name;
@@ -160,6 +161,52 @@ public class SearchQueryRequest {
 
         public void setOperator(String operator) {
             this.operator = operator;
+        }
+
+        public float getTieBreaker() {
+            return tieBreaker;
+        }
+
+        public void setTieBreaker(float tieBreaker) {
+            this.tieBreaker = tieBreaker;
+        }
+
+    }
+
+    public static class MultiQueryData extends QueryData {
+
+        private String value;
+        private String[] fields;
+        private String type;
+
+        public MultiQueryData(String value, String... fields) {
+            super(value,fields);
+            this.value = value;
+            this.fields = fields;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String[] getFields() {
+            return fields;
+        }
+
+        public void setFields(String[] fields) {
+            this.fields = fields;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
     }
 }

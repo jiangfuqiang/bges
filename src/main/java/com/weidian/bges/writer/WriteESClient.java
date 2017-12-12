@@ -50,6 +50,8 @@ public class WriteESClient<T> extends ESClient<T> {
 
         releaseClient(client);
 
+        indexRequest = null;
+
         IndexResponse indexResponse = actionFuture.actionGet();
 
         RestStatus restStatus = indexResponse.status();
@@ -87,6 +89,8 @@ public class WriteESClient<T> extends ESClient<T> {
         ActionFuture<BulkResponse> actionFuture = client.bulk(bulkRequest);
 
         releaseClient(client);
+
+        bulkRequest = null;
 
         BulkResponse bulkResponse = actionFuture.get();
 
@@ -136,6 +140,8 @@ public class WriteESClient<T> extends ESClient<T> {
         ActionFuture<UpdateResponse> actionFuture = client.update(updateRequest1);
 
         releaseClient(client);
+
+        indexRequest = null;
 
         UpdateResponse updateResponse = actionFuture.get();
 

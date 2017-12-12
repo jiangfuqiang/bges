@@ -97,6 +97,26 @@ public class ReadESClient<T> extends ESClient<T> {
         return null;
     }
 
+    /**
+     * 通过索引id查询原始数据
+     * @param index
+     * @param type
+     * @param id
+     * @return
+     */
+    public String getSourceStringById(String index, String type,String id) throws InterruptedException{
+        Client client = getClient();
+        GetRequestBuilder getRequestBuilder = client.prepareGet(index, type, id);
+        this.releaseClient(client);
+        if (getRequestBuilder != null) {
+            GetResponse getResponse = getRequestBuilder.get();
+            if (getResponse != null && getResponse.isExists()) {
+                String result = getResponse.getSourceAsString();
+                return result;
+            }
+        }
+        return null;
+    }
 
     /**
      * 根据查询条件分页查询数据
@@ -478,6 +498,9 @@ public class ReadESClient<T> extends ESClient<T> {
                     queryBuilder = booleanQueryBuilder;
                 } else if(isDisMax) {
                     disMaxQueryBuilder.add(rangeQueryBuilder);
+                    if(queryData.getTieBreaker() > 0.0f) {
+                        disMaxQueryBuilder.tieBreaker(queryData.getTieBreaker());
+                    }
                     queryBuilder = disMaxQueryBuilder;
                 } else {
                     queryBuilder = rangeQueryBuilder;
@@ -531,6 +554,9 @@ public class ReadESClient<T> extends ESClient<T> {
                     queryBuilder = booleanQueryBuilder;
                 } else if(isDisMax) {
                     disMaxQueryBuilder.add(tmpQueryBuilder);
+                    if(queryData.getTieBreaker() > 0.0f) {
+                        disMaxQueryBuilder.tieBreaker(queryData.getTieBreaker());
+                    }
                     queryBuilder = disMaxQueryBuilder;
                 } else {
                     queryBuilder = tmpQueryBuilder;
