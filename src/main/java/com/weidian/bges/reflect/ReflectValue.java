@@ -97,7 +97,6 @@ public class ReflectValue {
                 int index = 0;
                 for(Class ctClass : parameterTypes) {
                     try {
-                        //将字节数组值转换为普通类型值
                         values[index] = changeMethodValue(ctClass.getSimpleName(),value);
                     } catch (Exception e) {
                         throw new IllegalArgumentException("change value error: " + cn + " " + clazz.getName(),e);
@@ -158,6 +157,11 @@ public class ReflectValue {
                     return value.toString();
                 }
                 return "";
+            case "char":
+                if(value == null || "".equals(value)) {
+                    throw new IllegalArgumentException("value is null for char");
+                }
+                return Character.valueOf(value.toString().charAt(0));
             case "int":
                 if(value == null) {
                     throw new IllegalArgumentException("value is null for int");
@@ -307,12 +311,14 @@ public class ReflectValue {
             return Date.class;
         } else if(clazzName.equals("timestamp")) {
             return Timestamp.class;
+        } else if(clazzName.equals("char")) {
+            return char.class;
         }
         return null;
     }
 
     /**
-     * 把hbase的列名转为方法驼峰名
+     * 列名转为方法驼峰名
      * @param colName
      * @return
      */
@@ -330,7 +336,7 @@ public class ReflectValue {
     }
 
     /**
-     * 把hbase的列名转为方法驼峰名
+     * 列名转为方法驼峰名
      * @param colName
      * @return
      */
