@@ -657,11 +657,11 @@ public class ReadESClient<T> extends ESClient<T> {
                         List<SearchQueryRequest.QueryData> queryDataList = new ArrayList<SearchQueryRequest.QueryData>();
                         List<SearchQueryRequest.QueryData> rangeDataList = new ArrayList<SearchQueryRequest.QueryData>();
 //                        List<SearchQueryRequest.QueryData> rangeQueryDataList = new ArrayList<SearchQueryRequest.QueryData>();
-                        SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("content","追风筝人的看");
-                        SearchQueryRequest.QueryData queryData2 = new SearchQueryRequest.QueryData("movie_title","人");
+//                        SearchQueryRequest.QueryData queryData1 = new SearchQueryRequest.QueryData("content","追风筝人的看");
+                        SearchQueryRequest.QueryData queryData2 = new SearchQueryRequest.QueryData("movie_title","追风筝的人");
 //                        queryData2.setBoost(2.0f);
 //                        queryData1.setMimShouldMatch(1);
-                        queryDataList.add(queryData1);
+//                        queryDataList.add(queryData1);
                         queryDataList.add(queryData2);
 
 //

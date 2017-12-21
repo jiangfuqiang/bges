@@ -1,15 +1,14 @@
 package com.weidian.bges.model;
 
 /**
- * Created by jiang on 17/11/29.
+ * Created by jiang on 17/12/20.
  */
 public enum AggEnum {
 
-    AVG(1),
-    COUNT(2);
-
+    AGG(1),
+    HISGORGRAM(2),
+    METRICS(3);
     private int type;
-
     AggEnum(int type) {
         this.type = type;
     }
